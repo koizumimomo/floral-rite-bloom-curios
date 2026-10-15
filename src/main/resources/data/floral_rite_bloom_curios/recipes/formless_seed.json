@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "minecraft:glow_berries" },
+    { "item": "floral_rite_bloom_curios:primordial_petal" },
+    { "item": "minecraft:experience_bottle" }
+  ],
+  "result": { "item": "floral_rite_bloom_curios:formless_seed", "count": 2 }
+}

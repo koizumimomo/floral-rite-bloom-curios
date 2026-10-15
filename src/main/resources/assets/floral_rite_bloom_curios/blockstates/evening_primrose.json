@@ -1,0 +1,22 @@
+{
+  "variants": {
+    "age=0": {
+      "model": "floral_rite_bloom_curios:block/evening_primrose_stage_0"
+    },
+    "age=1": {
+      "model": "floral_rite_bloom_curios:block/evening_primrose_stage_1"
+    },
+    "age=2": {
+      "model": "floral_rite_bloom_curios:block/evening_primrose_stage_2"
+    },
+    "age=3": {
+      "model": "floral_rite_bloom_curios:block/evening_primrose_stage_3"
+    },
+    "age=4": {
+      "model": "floral_rite_bloom_curios:block/evening_primrose_stage_4"
+    },
+    "age=5": {
+      "model": "floral_rite_bloom_curios:block/evening_primrose_stage_5"
+    }
+  }
+}

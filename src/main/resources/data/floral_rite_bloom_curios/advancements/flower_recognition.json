@@ -1,0 +1,28 @@
+{
+  "parent": "floral_rite_bloom_curios:world_flower_awaken",
+  "display": {
+    "icon": {
+      "item": "floral_rite_bloom_curios:world_flower_will"
+    },
+    "title": {
+      "translate": "advancements.floral_rite_bloom_curios.flower_recognition.title"
+    },
+    "description": {
+      "translate": "advancements.floral_rite_bloom_curios.flower_recognition.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "defeat_frilias": {
+      "trigger": "minecraft:player_killed_entity",
+      "conditions": {
+        "entity": {
+          "type": "floral_rite_bloom_curios:frilias"
+        }
+      }
+    }
+  }
+}

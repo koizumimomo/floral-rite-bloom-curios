@@ -1,0 +1,26 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  },
+  "vertex": "floral_rite_bloom_curios:boss_shockwave",
+  "fragment": "floral_rite_bloom_curios:boss_finale",
+  "attributes": [ "Position" ],
+  "samplers": [
+    { "name": "DiffuseSampler" },
+    { "name": "DepthSampler" }
+  ],
+  "uniforms": [
+    { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1.0,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 ] },
+    { "name": "OutSize", "type": "float", "count": 2, "values": [1, 1] },
+    { "name": "SceneSize", "type": "float", "count": 2, "values": [1, 1] },
+    { "name": "InverseViewProjection", "type": "matrix4x4", "count": 16, "values": [ 1.0,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 ] },
+    { "name": "ViewProjection", "type": "matrix4x4", "count": 16, "values": [ 1.0,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 ] },
+    { "name": "CenterPos", "type": "float", "count": 3, "values": [0, 64, 0] },
+    { "name": "CameraPos", "type": "float", "count": 3, "values": [0, 0, 0] },
+    { "name": "SphereRadius", "type": "float", "count": 1, "values": [8.0] },
+    { "name": "iTime", "type": "float", "count": 1, "values": [1] },
+    { "name": "Visibility", "type": "float", "count": 1, "values": [1.0] }
+  ]
+}

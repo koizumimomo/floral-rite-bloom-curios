@@ -1,0 +1,22 @@
+{
+	"format_version": "1.9.0",
+	"credit": "Made with koizumi_momo",
+	"textures": {
+		"0": "floral_rite_bloom_curios:block/void_erosion_overlay",
+		"particle": "floral_rite_bloom_curios:block/void_erosion_overlay"
+	},
+	"elements": [
+		{
+			"from": [0, 0, 0],
+			"to": [16, 0.3, 16],
+			"faces": {
+				"north": {"uv": [0, 1.7, 16, 2], "texture": "#0"},
+				"east": {"uv": [0, 1.7, 16, 2], "texture": "#0"},
+				"south": {"uv": [0, 1.7, 16, 2], "texture": "#0"},
+				"west": {"uv": [0, 1.7, 16, 2], "texture": "#0"},
+				"up": {"uv": [0, 0, 16, 16], "texture": "#0"},
+				"down": {"uv": [0, 0, 16, 16], "texture": "#0"}
+			}
+		}
+	]
+}

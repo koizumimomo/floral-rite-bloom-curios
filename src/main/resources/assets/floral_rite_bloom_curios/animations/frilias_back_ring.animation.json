@@ -1,0 +1,111 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"idle": {
+			"loop": true,
+			"animation_length": 8,
+			"bones": {
+				"petal_ring": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"8.0": {
+							"vector": [0, 0, -720]
+						}
+					}
+				},
+				"glyph_ring": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"8.0": {
+							"vector": [0, 0, 720]
+						}
+					}
+				},
+				"flower_ring": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"8.0": {
+							"vector": [0, 0, 360]
+						}
+					}
+				},
+				"out": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 360]
+						},
+						"8.0": {
+							"vector": [0, 0, 0]
+						}
+					}
+				}
+			}
+		},
+		"ring_idle2": {
+			"loop": true,
+			"animation_length": 8,
+			"bones": {
+				"flower_ring": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"8.0": [0, 0, 360]
+					}
+				},
+				"petal_ring": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"8.0": [0, 0, -720]
+					}
+				},
+				"glyph_ring": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"8.0": [0, 0, 720]
+					}
+				},
+				"out": {
+					"rotation": {
+						"0.0": [0, 0, 360],
+						"8.0": [0, 0, 0]
+					}
+				}
+			}
+		},
+		"ring_idle": {
+			"loop": true,
+			"animation_length": 8,
+			"bones": {
+				"flower_ring": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"8.0": [0, 0, 360]
+					}
+				},
+				"petal_ring": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"8.0": [0, 0, -720]
+					}
+				},
+				"glyph_ring": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"8.0": [0, 0, 720]
+					}
+				},
+				"out": {
+					"rotation": {
+						"0.0": [0, 0, 360],
+						"8.0": [0, 0, 0]
+					}
+				}
+			}
+		}
+	}
+}

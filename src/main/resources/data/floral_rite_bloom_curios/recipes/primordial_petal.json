@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "minecraft:bone_meal" },
+    { "item": "minecraft:tall_grass" },
+    { "item": "minecraft:tall_grass" }
+  ],
+  "result": { "item": "floral_rite_bloom_curios:primordial_petal", "count": 3 }
+}

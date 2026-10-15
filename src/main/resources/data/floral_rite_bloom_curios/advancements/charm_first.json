@@ -1,0 +1,100 @@
+{
+  "display": {
+    "icon": {
+      "item": "floral_rite_bloom_curios:forest_whisper"
+    },
+    "title": {
+      "translate": "advancements.floral_rite_bloom_curios.charm_first.title"
+    },
+    "description": {
+      "translate": "advancements.floral_rite_bloom_curios.charm_first.description"
+    },
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false,
+    "background": "minecraft:textures/gui/advancements/backgrounds/adventure.png"
+  },
+  "criteria": {
+    "frost_chime": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": ["floral_rite_bloom_curios:frost_chime"]
+          }
+        ]
+      }
+    },
+    "ember_vine": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": ["floral_rite_bloom_curios:ember_vine"]
+          }
+        ]
+      }
+    },
+    "sky_tear": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": ["floral_rite_bloom_curios:sky_tear"]
+          }
+        ]
+      }
+    },
+    "forest_whisper": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": ["floral_rite_bloom_curios:forest_whisper"]
+          }
+        ]
+      }
+    },
+    "astral_bloom": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": ["floral_rite_bloom_curios:astral_bloom"]
+          }
+        ]
+      }
+    },
+    "black_spirit": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": ["floral_rite_bloom_curios:black_spirit"]
+          }
+        ]
+      }
+    },
+    "sky_pillar": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": ["floral_rite_bloom_curios:sky_pillar"]
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "frost_chime",
+      "ember_vine",
+      "sky_tear",
+      "forest_whisper",
+      "astral_bloom",
+      "black_spirit",
+      "sky_pillar"
+    ]
+  ]
+}

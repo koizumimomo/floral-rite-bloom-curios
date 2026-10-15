@@ -1,0 +1,6 @@
+{
+  "order": 101,
+  "size": 1,
+  "icon": "curios:slot/flower_eternal",
+  "validators": ["curios:tag"]
+}

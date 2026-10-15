@@ -1,0 +1,56 @@
+# ============================================================
+#  花仪绽放 —— 提交范围：只提源与文档
+#  注意：带 / 前缀的路径写成「/xxx」表示只排除根目录的那一个，
+#        不加斜杠会连 src/ 下的同名文件一起排掉（材质就是靠这个保住的）。
+# ============================================================
+
+# ---- 构建产物 ----
+build/
+.gradle/
+run/
+logs/
+*.class
+
+# ---- 第三方模组与解包资料（体积大 + 版权，一律不入库）----
+mod参考/
+.iron_ref/
+.bosses_ref/
+.tmp_buss_unleashed/
+.goety_tmp/
+.itemstudio_backup/
+.modmind/
+cindaria_decomp/
+cindaria_decomp_tmp/
+cindaria_model/
+L7_unpacked_models/
+ref/
+net/
+bin/
+tmp_fire/
+log_extract/
+_errortmp/
+_errortmp2/
+__pycache__/
+design/references/
+
+# ---- 编辑器/工具目录 ----
+.trae/
+.vscode/
+
+# ---- 开发笔记与设计目录（按「只提源与文档」排除；如需备份模型源文件再放开）----
+design/
+
+# ---- 混进来的他人内容 / 工具配置 ----
+# 诡厄巫法（GoetyRevelation）的语言文件，是参考素材不是本项目内容
+启示录的zh_cn.json
+# 另一个模组 uom 的 mixin 配置残留
+mixins_uom.json
+# ModMind 工具配置，且内含本地绝对路径
+modmind.project.json
+modmind.template.json
+
+# ---- 根目录的中间产物（用 / 前缀锚定，不影响 src/ 下的材质与模型）----
+/*.log
+/*.txt
+/*.png
+/*.ps1

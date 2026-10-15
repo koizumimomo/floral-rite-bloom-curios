@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "floral_rite_bloom_curios:item/evening_primrose_seeds"
+  }
+}

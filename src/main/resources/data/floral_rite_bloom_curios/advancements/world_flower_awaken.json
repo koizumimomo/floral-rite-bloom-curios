@@ -1,0 +1,23 @@
+{
+  "parent": "floral_rite_bloom_curios:charm_collector",
+  "display": {
+    "icon": {
+      "item": "floral_rite_bloom_curios:world_flower"
+    },
+    "title": {
+      "translate": "advancements.floral_rite_bloom_curios.world_flower_awaken.title"
+    },
+    "description": {
+      "translate": "advancements.floral_rite_bloom_curios.world_flower_awaken.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "awaken": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

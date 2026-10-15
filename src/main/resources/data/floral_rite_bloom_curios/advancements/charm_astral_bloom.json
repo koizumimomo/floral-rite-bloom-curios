@@ -1,0 +1,30 @@
+{
+  "parent": "floral_rite_bloom_curios:charm_first",
+  "display": {
+    "icon": {
+      "item": "floral_rite_bloom_curios:astral_bloom"
+    },
+    "title": {
+      "translate": "advancements.floral_rite_bloom_curios.charm_astral_bloom.title"
+    },
+    "description": {
+      "translate": "advancements.floral_rite_bloom_curios.charm_astral_bloom.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_charm": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": ["floral_rite_bloom_curios:astral_bloom"]
+          }
+        ]
+      }
+    }
+  }
+}

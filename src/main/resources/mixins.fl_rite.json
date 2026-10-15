@@ -1,0 +1,21 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "cn.blockforge.generated.floralritebloomcurios.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "client": [
+    "ParticleManagerMixin",
+    "LocalPlayerMixin",
+    "MinecraftMixin"
+  ],
+  "injectors": {
+    "maxShiftBy": 2
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  },
+  "mixins": [
+    "LevelMixin"
+  ],
+  "priority": 1000
+}

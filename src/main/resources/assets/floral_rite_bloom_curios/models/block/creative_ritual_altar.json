@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "floral_rite_bloom_curios:block/ritual_altar"
+  }
+}

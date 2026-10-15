@@ -1,0 +1,30 @@
+{
+  "parent": "floral_rite_bloom_curios:charm_first",
+  "display": {
+    "icon": {
+      "item": "floral_rite_bloom_curios:black_spirit"
+    },
+    "title": {
+      "translate": "advancements.floral_rite_bloom_curios.charm_black_spirit.title"
+    },
+    "description": {
+      "translate": "advancements.floral_rite_bloom_curios.charm_black_spirit.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_charm": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": ["floral_rite_bloom_curios:black_spirit"]
+          }
+        ]
+      }
+    }
+  }
+}

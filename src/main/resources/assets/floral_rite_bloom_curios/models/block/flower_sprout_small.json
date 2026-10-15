@@ -1,0 +1,7 @@
+{
+ "parent": "minecraft:block/cross",
+ "textures": {
+  "cross": "floral_rite_bloom_curios:block/flower_sprout_small"
+ },
+ "render_type": "cutout"
+}

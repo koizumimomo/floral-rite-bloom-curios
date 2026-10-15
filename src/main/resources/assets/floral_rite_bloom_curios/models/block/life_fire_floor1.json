@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/template_fire_floor",
+  "textures": {
+    "fire": "floral_rite_bloom_curios:block/life_fire_1"
+  }
+}

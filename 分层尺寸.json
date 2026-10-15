@@ -1,0 +1,47 @@
+{
+  "说明": "分层透明图片素材，不是可直接启用的资源包；预览背景和文字不在贴图里。",
+  "frame_size": [
+    328,
+    38
+  ],
+  "fill_size": [
+    256,
+    16
+  ],
+  "fill_offset": [
+    36,
+    11
+  ],
+  "render_order": [
+    "游戏绘制暗底槽",
+    "裁切填充层",
+    "边框层",
+    "游戏绘制名称、秒数与按键"
+  ],
+  "boss_progress": "当前生命 / 最大生命",
+  "cooldown_progress": "1 - 剩余冷却刻数 / 总冷却刻数",
+  "recall_window_progress": "剩余窗口刻数 / 600，与冷却区分；窗口结束后开始冷却",
+  "cooldown_ticks": {
+    "frost": 600,
+    "astral": 600,
+    "floral": 3600
+  },
+  "themes": {
+    "time": {
+      "frame": "time_progress_frame.png",
+      "fill": "time_progress_fill.png"
+    },
+    "frost": {
+      "frame": "frost_progress_frame.png",
+      "fill": "frost_progress_fill.png"
+    },
+    "astral": {
+      "frame": "astral_progress_frame.png",
+      "fill": "astral_progress_fill.png"
+    },
+    "floral": {
+      "frame": "floral_progress_frame.png",
+      "fill": "floral_progress_fill.png"
+    }
+  }
+}

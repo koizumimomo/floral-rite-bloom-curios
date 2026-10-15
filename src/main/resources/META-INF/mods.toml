@@ -1,0 +1,54 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="All Rights Reserved"
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="koizumi_momo"
+logoFile="logo.png"
+credits='''Boss 演出粒子贴图: Iron-Elden-Ring-Particle-library by shuimo0413 (MIT) - github.com/shuimo0413/Iron-Elden-Ring-Particle-library
+部分代码与文案在 AI 助手（Claude / MiniMax / glm-5.3）协助下完成。'''
+description='''花仪绽放 —— 围绕「花灵」的 Boss 挑战与饰品玩法。
+
+· 芙莉艾丝：八阶段 Boss（自然 / 焚尽 / 霜华 / 云雨 / 天空 / 虚空 / 枯萎 / 时间），每阶段封印一只花灵。
+· 花灵饰品：七枚可佩戴的 Curios 饰品，各有独立能力（寒风铃回溯、星界折跃、天穹花二段跳 等）。
+· 永恒花园：对主世界盛开的世界之花使用，进入独立挑战维度。
+· 仪式祭坛：以 offerings 驱动花灵生长仪式。
+· 终结技「万花凋零」：读条期间可击杀 Boss 打断，否则全场引力透镜扭曲 + 24 格内致命一击。
+
+A boss-focused content mod: an eight-phase floral boss, seven wearable charm
+relics with unique abilities, a dedicated challenge dimension, ritual altars,
+and a screen-warping ultimate attack.'''
+[[dependencies.${mod_id}]]
+modId="forge"
+mandatory=true
+versionRange="[${forge_version},)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.${mod_id}]]
+modId="minecraft"
+mandatory=true
+versionRange="[${minecraft_version}]"
+ordering="NONE"
+side="BOTH"
+[[dependencies.${mod_id}]]
+modId="curios"
+mandatory=true
+versionRange="[5.14,)"
+ordering="NONE"
+side="BOTH"
+# GeckoLib：丰饶 3D 模型渲染（与铁魔法同一渲染链），必需前置
+[[dependencies.${mod_id}]]
+modId="geckolib"
+mandatory=true
+versionRange="[4.8,)"
+ordering="AFTER"
+side="BOTH"
+# JEI 只是可选前置：没装照样能进游戏，装了才会多出“花仪仪式 / 花灵生长”两页。
+[[dependencies.${mod_id}]]
+modId="jei"
+mandatory=false
+versionRange="[15,)"
+ordering="AFTER"
+side="BOTH"

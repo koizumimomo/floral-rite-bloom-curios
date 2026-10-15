@@ -1,0 +1,85 @@
+{
+	"format_version": "1.9.0",
+	"credit": "Made with koizumi_momo",
+	"textures": {
+		"canopy_top": "floral_rite_bloom:leaf_canopy_top",
+		"canopy_side": "floral_rite_bloom:leaf_canopy_side",
+		"particle": "floral_rite_bloom:leaf_stem",
+		"stem": "floral_rite_bloom:leaf_stem"
+	},
+	"elements": [
+		{
+			"name": "stem",
+			"from": [7, 0, 7],
+			"to": [9, 11, 9],
+			"faces": {
+				"north": {"uv": [0, 5, 2, 16], "texture": "#stem"},
+				"east": {"uv": [0, 5, 2, 16], "texture": "#stem"},
+				"south": {"uv": [0, 5, 2, 16], "texture": "#stem"},
+				"west": {"uv": [0, 5, 2, 16], "texture": "#stem"},
+				"down": {"uv": [0, 0, 2, 2], "texture": "#stem"}
+			}
+		},
+		{
+			"name": "canopy_rim",
+			"from": [0, 11, 0],
+			"to": [16, 12, 16],
+			"faces": {
+				"north": {"uv": [0, 0, 16, 1], "texture": "#canopy_side"},
+				"east": {"uv": [0, 0, 16, 1], "texture": "#canopy_side"},
+				"south": {"uv": [0, 0, 16, 1], "texture": "#canopy_side"},
+				"west": {"uv": [0, 0, 16, 1], "texture": "#canopy_side"},
+				"up": {"uv": [0, 0, 16, 16], "texture": "#canopy_top"},
+				"down": {"uv": [0, 0, 16, 16], "texture": "#canopy_side"}
+			}
+		},
+		{
+			"name": "canopy_l2",
+			"from": [2, 12, 2],
+			"to": [14, 13, 14],
+			"faces": {
+				"north": {"uv": [2, 0, 14, 1], "texture": "#canopy_side"},
+				"east": {"uv": [2, 0, 14, 1], "texture": "#canopy_side"},
+				"south": {"uv": [2, 0, 14, 1], "texture": "#canopy_side"},
+				"west": {"uv": [2, 0, 14, 1], "texture": "#canopy_side"},
+				"up": {"uv": [2, 2, 14, 14], "texture": "#canopy_top"}
+			}
+		},
+		{
+			"name": "canopy_l3",
+			"from": [4, 13, 4],
+			"to": [12, 14, 12],
+			"faces": {
+				"north": {"uv": [4, 0, 12, 1], "texture": "#canopy_side"},
+				"east": {"uv": [4, 0, 12, 1], "texture": "#canopy_side"},
+				"south": {"uv": [4, 0, 12, 1], "texture": "#canopy_side"},
+				"west": {"uv": [4, 0, 12, 1], "texture": "#canopy_side"},
+				"up": {"uv": [4, 4, 12, 12], "texture": "#canopy_top"}
+			}
+		},
+		{
+			"name": "canopy_l4",
+			"from": [6, 14, 6],
+			"to": [10, 15, 10],
+			"faces": {
+				"north": {"uv": [6, 0, 10, 1], "texture": "#canopy_side"},
+				"east": {"uv": [6, 0, 10, 1], "texture": "#canopy_side"},
+				"south": {"uv": [6, 0, 10, 1], "texture": "#canopy_side"},
+				"west": {"uv": [6, 0, 10, 1], "texture": "#canopy_side"},
+				"up": {"uv": [6, 6, 10, 10], "texture": "#canopy_top"}
+			}
+		},
+		{
+			"name": "canopy_cap",
+			"from": [7, 15, 7],
+			"to": [9, 16, 9],
+			"faces": {
+				"north": {"uv": [7, 0, 9, 1], "texture": "#canopy_side"},
+				"east": {"uv": [7, 0, 9, 1], "texture": "#canopy_side"},
+				"south": {"uv": [7, 0, 9, 1], "texture": "#canopy_side"},
+				"west": {"uv": [7, 0, 9, 1], "texture": "#canopy_side"},
+				"up": {"uv": [7, 7, 9, 9], "texture": "#canopy_top"}
+			}
+		}
+	]
+}

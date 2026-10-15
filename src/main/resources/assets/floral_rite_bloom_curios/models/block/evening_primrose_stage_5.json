@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cross",
+  "textures": {
+    "cross": "floral_rite_bloom_curios:block/evening_primrose_stage_5"
+  },
+  "render_type": "cutout"
+}

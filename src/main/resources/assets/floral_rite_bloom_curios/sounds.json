@@ -1,0 +1,95 @@
+{
+  "doll_music": {
+    "sounds": [
+      {
+        "name": "floral_rite_bloom_curios:doll_music",
+        "stream": true
+      }
+    ]
+  },
+  "chou_hen": {
+    "sounds": [
+      {
+        "name": "floral_rite_bloom_curios:chou_hen"
+      }
+    ]
+  },
+  "boss_music": {
+    "sounds": [
+      {
+        "name": "floral_rite_bloom_curios:boss_battle_bgm",
+        "stream": true
+      }
+    ]
+  },
+  "frilias_awaken": {
+    "sounds": [
+      {
+        "name": "floral_rite_bloom_curios:frilias_awaken"
+      }
+    ]
+  },
+  "frilias_summon": {
+    "sounds": [
+      {
+        "name": "floral_rite_bloom_curios:frilias_summon"
+      }
+    ]
+  },
+  "frilias_phase": {
+    "sounds": [
+      {
+        "name": "floral_rite_bloom_curios:frilias_phase"
+      }
+    ]
+  },
+  "frilias_death": {
+    "sounds": [
+      {
+        "name": "floral_rite_bloom_curios:frilias_death"
+      }
+    ]
+  },
+  "seal_apply": {
+    "sounds": [
+      {
+        "name": "floral_rite_bloom_curios:seal_apply"
+      }
+    ]
+  },
+  "bountiful_shoot": {
+    "sounds": [
+      {
+        "name": "floral_rite_bloom_curios:bountiful_shoot"
+      }
+    ]
+  },
+  "chime_recall": {
+    "sounds": [
+      {
+        "name": "floral_rite_bloom_curios:chime_recall"
+      }
+    ]
+  },
+  "wreath_burst": {
+    "sounds": [
+      {
+        "name": "floral_rite_bloom_curios:wreath_burst"
+      }
+    ]
+  },
+  "garden_gate": {
+    "sounds": [
+      {
+        "name": "floral_rite_bloom_curios:garden_gate"
+      }
+    ]
+  },
+  "ritual_complete": {
+    "sounds": [
+      {
+        "name": "floral_rite_bloom_curios:ritual_complete"
+      }
+    ]
+  }
+}

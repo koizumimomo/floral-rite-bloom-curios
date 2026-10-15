@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "floral_rite_bloom_curios:item/astral_bloom"
+  },
+  "overrides": [
+    {"predicate": {"floral_rite_bloom_curios:sealed": 1.0}, "model": "floral_rite_bloom_curios:item/sealed_charm"}
+  ]
+}

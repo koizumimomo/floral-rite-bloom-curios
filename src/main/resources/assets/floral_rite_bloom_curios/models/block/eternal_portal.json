@@ -1,0 +1,18 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "floral_rite_bloom_curios:block/eternal_portal",
+    "cross": "floral_rite_bloom_curios:block/eternal_portal"
+  },
+  "elements": [
+    {
+      "from": [-6.4, 0, 7.995],
+      "to": [22.4, 28.8, 8.005],
+      "shade": false,
+      "faces": {
+        "north": { "uv": [0, 0, 16, 16], "texture": "#cross" },
+        "south": { "uv": [0, 0, 16, 16], "texture": "#cross" }
+      }
+    }
+  ]
+}

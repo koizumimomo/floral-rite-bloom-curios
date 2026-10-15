@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "age=0": {
+      "model": "floral_rite_bloom_curios:block/flower_sprout_small"
+    },
+    "age=1": {
+      "model": "floral_rite_bloom_curios:block/flower_sprout_small"
+    },
+    "age=2": {
+      "model": "floral_rite_bloom_curios:block/flower_sprout_mid"
+    },
+    "age=3": {
+      "model": "floral_rite_bloom_curios:block/frost_chime_flower"
+    }
+  }
+}

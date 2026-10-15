@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/template_fire_up",
+  "textures": {
+    "fire": "floral_rite_bloom_curios:block/life_fire_0"
+  }
+}
