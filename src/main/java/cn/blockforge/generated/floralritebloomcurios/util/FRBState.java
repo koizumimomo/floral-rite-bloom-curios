@@ -9,9 +9,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import top.theillusivec4.curios.api.CuriosApi;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 佩戴检测与玩家持久状态（七花收集进度、快照、各类冷却）。
@@ -24,25 +24,40 @@ public final class FRBState {
     // ---- 佩戴检测 ----
 
     /**
-     * 佩戴存在缓存（参考 esoteric_spell RisingInoliaRingHelper.RING_PRESENCE_CACHE）。
-     * 登录/切维度后 Curios capability 短暂未就绪，直接查 isEquipped 会持续返回 false；
-     * 用缓存避免每 tick 无效查询，并在装备/卸下事件中失效。
+     * 佩戴缓存。判定方式对齐诡厄巫法启示录的 {@code CuriosFinder.findCurio}——
+     * 那边每次使用能力都直接查 Curios，不缓存；这里保留缓存只是为了减少同一 tick 内的重复查询
+     * （{@link #active} 每 tick 会被调用十几次），但必须满足两个条件：
+     * <ul>
+     *   <li>缓存键是「客户端/服务端 + 玩家 UUID + 具体饰品」：否则戴着森语藤时查焚生藤也会命中；
+     *       单人游戏里客户端和服务端共用一个 JVM，不加 side 的话客户端同步窗口内的 false
+     *       会污染服务端判定；</li>
+     *   <li>缓存最多存活 {@value #WEAR_CACHE_TTL} tick：登录 / 切维度时 Curios 还没同步完，
+     *       这一瞬间查到的 false 不能被长期记住（旧实现会几乎永久记住，导致切维度后
+     *       "不被判定成携带状态"）。</li>
+     * </ul>
      */
-    private static final Map<UUID, Boolean> WEAR_CACHE = new HashMap<>();
-    private static final int WEAR_RECHECK_INTERVAL = 40; // ticks
+    private static final Map<WearKey, WearEntry> WEAR_CACHE = new ConcurrentHashMap<>();
+    /** 佩戴缓存存活时间：20 tick = 1 秒。 */
+    private static final int WEAR_CACHE_TTL = 20;
+
+    private record WearKey(boolean clientSide, UUID player, Item item) {}
+    private record WearEntry(boolean worn, int tick) {}
 
     /** 该物品是否佩戴在实体的花仪 / 永恒槽位中（含其它 curios 槽，统一判定）。 */
     public static boolean wearing(LivingEntity entity, Item item) {
-        if (entity == null) return false;
-        UUID id = entity.getUUID();
-        Boolean cached = WEAR_CACHE.get(id);
-        // 缓存为 true 直接命中；缓存为 false 时每 WEAR_RECHECK_INTERVAL tick 重查一次
-        if (cached != null && (cached || (entity.tickCount + entity.getRandom().nextInt(WEAR_RECHECK_INTERVAL)) % WEAR_RECHECK_INTERVAL != 0)) {
-            return cached;
+        if (entity == null || item == null) return false;
+        boolean clientSide = entity.level() != null && entity.level().isClientSide;
+        WearKey key = new WearKey(clientSide, entity.getUUID(), item);
+        WearEntry cached = WEAR_CACHE.get(key);
+        int now = entity.tickCount;
+        if (cached != null) {
+            int age = now - cached.tick();
+            // 客户端换维度后 tickCount 会从头计数，age 可能为负——同样按过期处理
+            if (age >= 0 && age < WEAR_CACHE_TTL) return cached.worn();
         }
         boolean result = findEquipped(entity, item).isPresent();
         if (WEAR_CACHE.size() > 16384) WEAR_CACHE.clear();
-        WEAR_CACHE.put(id, result);
+        WEAR_CACHE.put(key, new WearEntry(result, now));
         return result;
     }
 
@@ -53,9 +68,15 @@ public final class FRBState {
                 .map(top.theillusivec4.curios.api.SlotResult::stack);
     }
 
-    /** 使缓存失效（装备/卸下/登录/切维度/重生时调用）。 */
+    /**
+     * 使缓存失效（装备/卸下/登录/重生时调用）。
+     * 切维度<b>不需要</b>调用：饰品仍然戴着，缓存本身有效；即使这一瞬间 Curios 未同步，
+     * {@link #WEAR_CACHE_TTL} 后也会自动重查，不会像旧实现那样把 false 长期记住。
+     */
     public static void invalidateWearCache(LivingEntity entity) {
-        if (entity != null) WEAR_CACHE.remove(entity.getUUID());
+        if (entity == null) return;
+        UUID id = entity.getUUID();
+        WEAR_CACHE.keySet().removeIf(key -> key.player().equals(id));
     }
 
     public static void clearWearCache() {

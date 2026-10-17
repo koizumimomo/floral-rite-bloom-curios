@@ -279,7 +279,10 @@ public final class CharmEvents {
         }
     }
 
-    // ---------------- 佩戴缓存失效（登录/切维度/重生/装备/卸下） ----------------
+    // ---------------- 佩戴缓存失效（登录/重生/装备/卸下） ----------------
+    // 切维度不清理：饰品仍然戴着，缓存本身有效。旧实现会在 PlayerChangedDimensionEvent
+    // 里清缓存，正好撞上 Curios 尚未同步的窗口，把 false 记进缓存后长期不复查，
+    // 表现为"换个维度以后终极饰品不被判定成携带状态"。
 
     @SubscribeEvent
     public static void onCurioEquip(CurioEquipEvent event) {
@@ -293,11 +296,6 @@ public final class CharmEvents {
 
     @SubscribeEvent
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
-        FRBState.invalidateWearCache(event.getEntity());
-    }
-
-    @SubscribeEvent
-    public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
         FRBState.invalidateWearCache(event.getEntity());
     }
 
