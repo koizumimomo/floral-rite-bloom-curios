@@ -1,0 +1,12 @@
+{
+  "type": "forge:add_features",
+  "biomes": [
+    "minecraft:flower_forest",
+    "minecraft:plains",
+    "minecraft:sunflower_plains",
+    "minecraft:cherry_grove",
+    "minecraft:meadow"
+  ],
+  "features": "floral_rite_bloom_curios:world_flower",
+  "step": "vegetal_decoration"
+}

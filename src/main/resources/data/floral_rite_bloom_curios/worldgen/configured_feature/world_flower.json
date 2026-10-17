@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:simple_block",
+  "config": {
+    "to_place": {
+      "type": "minecraft:simple_state_provider",
+      "state": {
+        "Name": "floral_rite_bloom_curios:world_flower",
+        "Properties": {
+          "age": "0"
+        }
+      }
+    }
+  }
+}

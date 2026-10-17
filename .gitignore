@@ -49,6 +49,10 @@ mixins_uom.json
 modmind.project.json
 modmind.template.json
 
+# ---- 模型工程文件（Blockbench 源文件，按用户要求不入库）----
+# 注意：运行期用的是 src/ 下的 .geo.json，.bbmodel 只是可编辑的源工程
+*.bbmodel
+
 # ---- 根目录的中间产物（用 / 前缀锚定，不影响 src/ 下的材质与模型）----
 /*.log
 /*.txt
