@@ -19,6 +19,7 @@ import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.BabyEntitySpawnEvent;
@@ -26,6 +27,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import cn.blockforge.generated.floralritebloomcurios.FloralRiteBloom;
 
@@ -36,6 +40,9 @@ import cn.blockforge.generated.floralritebloomcurios.FloralRiteBloom;
  */
 @Mod.EventBusSubscriber(modid = FloralRiteBloom.MOD_ID)
 public final class CharmTickEvents {
+
+    /** 每个玩家最后一次下发给客户端的终极饰品佩戴状态。 */
+    private static final Map<UUID, Boolean> LAST_SENT_ULTIMATE = new ConcurrentHashMap<>();
 
     @SubscribeEvent
     public static void onLivingTick(LivingEvent.LivingTickEvent event) {
@@ -186,6 +193,32 @@ public final class CharmTickEvents {
             player.getAbilities().flying = false;
             player.onUpdateAbilities();
         }
+
+        // 终极饰品佩戴状态同步：服务端权威值，供客户端在 Curios 同步滞后时兜底
+        if (tc % 20 == 0) {
+            boolean worn = FRBState.hasUltimate(player);
+            Boolean last = LAST_SENT_ULTIMATE.get(player.getUUID());
+            if (last == null || last != worn) {
+                LAST_SENT_ULTIMATE.put(player.getUUID(), worn);
+                cn.blockforge.generated.floralritebloomcurios.network.FRBNetwork
+                        .sendUltimateState(player, worn);
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            boolean worn = FRBState.hasUltimate(player);
+            LAST_SENT_ULTIMATE.put(player.getUUID(), worn);
+            cn.blockforge.generated.floralritebloomcurios.network.FRBNetwork
+                    .sendUltimateState(player, worn);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+        LAST_SENT_ULTIMATE.remove(event.getEntity().getUUID());
     }
 
     /**

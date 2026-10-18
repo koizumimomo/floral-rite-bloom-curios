@@ -38,6 +38,8 @@ public final class FRBNetwork {
     public static Consumer<AbilityCooldownPacket> ON_ABILITY_COOLDOWN = p -> {};
     /** r102：S2C 世界空间后处理效果（冲击波等）。 */
     public static Consumer<ShaderEffectPacket> ON_SHADER_EFFECT = p -> {};
+    /** S2C 服务端权威的终极饰品佩戴状态（客户端 Curios 同步兜底）。 */
+    public static Consumer<UltimateStatePacket> ON_ULTIMATE_STATE = p -> {};
 
     private static int index;
 
@@ -216,6 +218,12 @@ public final class FRBNetwork {
                 ShaderEffectPacket::encode, ShaderEffectPacket::decode,
                 (msg, sup) -> {
                     sup.get().enqueueWork(() -> ON_SHADER_EFFECT.accept(msg));
+                    sup.get().setPacketHandled(true);
+                });
+        CHANNEL.registerMessage(index++, UltimateStatePacket.class,
+                UltimateStatePacket::encode, UltimateStatePacket::decode,
+                (msg, sup) -> {
+                    sup.get().enqueueWork(() -> ON_ULTIMATE_STATE.accept(msg));
                     sup.get().setPacketHandled(true);
                 });
     }
@@ -399,6 +407,11 @@ public final class FRBNetwork {
                 CHANNEL.send(PacketDistributor.PLAYER.with(() -> p), pkt);
             }
         }
+    }
+
+    /** S2C：同步服务端权威的终极饰品佩戴状态。 */
+    public static void sendUltimateState(ServerPlayer player, boolean worn) {
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new UltimateStatePacket(worn));
     }
 
     private FRBNetwork() {}

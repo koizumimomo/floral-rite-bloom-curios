@@ -26,11 +26,8 @@ import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.living.MobEffectEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import top.theillusivec4.curios.api.event.CurioEquipEvent;
-import top.theillusivec4.curios.api.event.CurioUnequipEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -277,31 +274,6 @@ public final class CharmEvents {
                 GrowthBoost.boost(level, player.blockPosition(), 8, 6);
             }
         }
-    }
-
-    // ---------------- 佩戴缓存失效（登录/重生/装备/卸下） ----------------
-    // 切维度不清理：饰品仍然戴着，缓存本身有效。旧实现会在 PlayerChangedDimensionEvent
-    // 里清缓存，正好撞上 Curios 尚未同步的窗口，把 false 记进缓存后长期不复查，
-    // 表现为"换个维度以后终极饰品不被判定成携带状态"。
-
-    @SubscribeEvent
-    public static void onCurioEquip(CurioEquipEvent event) {
-        FRBState.invalidateWearCache(event.getEntity());
-    }
-
-    @SubscribeEvent
-    public static void onCurioUnequip(CurioUnequipEvent event) {
-        FRBState.invalidateWearCache(event.getEntity());
-    }
-
-    @SubscribeEvent
-    public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
-        FRBState.invalidateWearCache(event.getEntity());
-    }
-
-    @SubscribeEvent
-    public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
-        FRBState.invalidateWearCache(event.getEntity());
     }
 
     private CharmEvents() {}

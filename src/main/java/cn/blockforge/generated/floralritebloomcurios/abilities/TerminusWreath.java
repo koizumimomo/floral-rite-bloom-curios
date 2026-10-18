@@ -13,14 +13,12 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.ai.attributes.AttributeInstance;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.living.LivingDamageEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 终极效果【终末花环】：每 180 秒可主动释放（按键 R）或在受到致死伤害时自动触发。
  * 以玩家自身为中心展开半径 32 格的祝福领域，领域内获得：
- * 生命恢复Ⅱ、伤害吸收Ⅴ、抗性提升Ⅳ、攻击伤害 +700%。不消耗任何物品。
+ * 生命恢复Ⅱ、伤害吸收Ⅴ、抗性提升Ⅳ、造成的最终伤害 +700%。不消耗任何物品。
  */
 @Mod.EventBusSubscriber(modid = FloralRiteBloom.MOD_ID)
 public final class TerminusWreath {
@@ -36,9 +34,8 @@ public final class TerminusWreath {
     public static final int DURATION_TICKS = 12 * 20;
     public static final double RADIUS = 32.0D;
     public static final int DOMAIN_COLOR = 0xf2d5ff;
-
-    private static final UUID ATTACK_BONUS_UUID = UUID.nameUUIDFromBytes(
-            "floral_rite_bloom_curios:wreath_attack".getBytes(StandardCharsets.UTF_8));
+    /** +700% = ×8。作用于玩家造成的全部伤害类型。 */
+    public static final float DAMAGE_MULTIPLIER = 8.0F;
 
     private static final Map<UUID, Long> DOMAINS = new ConcurrentHashMap<>();
 
@@ -65,7 +62,6 @@ public final class TerminusWreath {
         player.invulnerableTime = Math.max(player.invulnerableTime, 30);
 
         grantBuffs(player);
-        applyAttackBonus(player);
 
         level.playSound(null, player,
                 cn.blockforge.generated.floralritebloomcurios.registry.FRBSounds.WREATH_BURST.get(),
@@ -84,19 +80,22 @@ public final class TerminusWreath {
         player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, DURATION_TICKS, 3, false, true));
     }
 
-    /** 攻击伤害 +700%（临时修饰符，领域结束即收回）。 */
-    private static void applyAttackBonus(ServerPlayer player) {
-        AttributeInstance attr = player.getAttribute(Attributes.ATTACK_DAMAGE);
-        if (attr != null) {
-            attr.removeModifier(ATTACK_BONUS_UUID);
-            attr.addTransientModifier(new AttributeModifier(ATTACK_BONUS_UUID,
-                    "frb_wreath_attack", 7.0D, AttributeModifier.Operation.MULTIPLY_BASE));
-        }
-    }
-
-    private static void removeAttackBonus(ServerPlayer player) {
-        AttributeInstance attr = player.getAttribute(Attributes.ATTACK_DAMAGE);
-        if (attr != null) attr.removeModifier(ATTACK_BONUS_UUID);
+    /**
+     * 领域内玩家造成的最终伤害 ×8（+700%）。
+     * <p>
+     * 放在 {@link LivingDamageEvent} 而不是攻击力属性：属性只影响近战/弹射物的物理伤害，
+     * 法术（魔法伤害）和花灵的自定义伤害类型都不会经过它。LivingDamageEvent 在护甲、
+     * 抗性、伤害吸收全部结算完之后、真正扣血之前触发，此时 amount 就是最终出伤，
+     * 在这里乘倍率可以覆盖所有伤害类型。LOWEST 优先级保证它在其它增伤之后执行。
+     */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onLivingDamage(LivingDamageEvent event) {
+        if (event.isCanceled() || event.getAmount() <= 0.0F) return;
+        if (event.getEntity().level().isClientSide) return;
+        if (!(event.getSource().getEntity() instanceof ServerPlayer player)) return;
+        if (event.getEntity() == player) return; // 不放大自伤
+        if (!isDomainActive(player)) return;
+        event.setAmount(event.getAmount() * DAMAGE_MULTIPLIER);
     }
 
     public static boolean isDomainActive(ServerPlayer player) {
@@ -115,27 +114,40 @@ public final class TerminusWreath {
         level.sendParticles(ParticleTypes.HAPPY_VILLAGER, x, y + 1.0D, z, 60, 3.0D, 1.5D, 3.0D, 0.2D);
     }
 
+    /**
+     * 领域维持：每 tick 遍历在线玩家，而不是遍历维度。
+     * <p>
+     * 旧实现监听 {@link TickEvent.LevelTickEvent} 并调用 {@code level.getPlayerByUUID}，
+     * 这个方法只在该维度内查找玩家：玩家在主世界展开领域后，下界 / 末地 / 永恒花园
+     * 任意一个维度 tick 一次，就会因为"这个维度里没有该玩家"把领域条目删掉。
+     * 领域实际存活不到 1 秒，{@link #isDomainActive} 一直返回 false，最终伤害倍率也就没生效。
+     * 改用 {@link TickEvent.ServerTickEvent} + 全局玩家列表后，领域能正常维持 12 秒，
+     * 也不受切换维度影响。
+     */
     @SubscribeEvent
-    public static void onServerTick(TickEvent.LevelTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || event.level.isClientSide) return;
-        if (!(event.level instanceof ServerLevel level)) return;
-        long now = level.getGameTime();
-        DOMAINS.entrySet().removeIf(entry -> {
-            if (entry.getValue() < now) {
-                if (level.getPlayerByUUID(entry.getKey()) instanceof ServerPlayer owner) {
-                    removeAttackBonus(owner);
-                }
-                return true;
-            }
-            if (!(level.getPlayerByUUID(entry.getKey()) instanceof ServerPlayer owner) || !owner.isAlive()) {
-                return true;
+    public static void onServerTick(TickEvent.ServerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
+        var server = event.getServer();
+        if (server == null) return;
+        for (ServerPlayer owner : server.getPlayerList().getPlayers()) {
+            Long until = DOMAINS.get(owner.getUUID());
+            if (until == null) continue;
+            long now = owner.serverLevel().getGameTime();
+            if (until < now || !owner.isAlive() || owner.isRemoved()) {
+                DOMAINS.remove(owner.getUUID());
+                continue;
             }
             if (owner.tickCount % 40 == 0) {
                 grantBuffs(owner);
-                pulse(level, owner);
+                pulse(owner.serverLevel(), owner);
             }
-            return false;
-        });
+        }
+    }
+
+    /** 离线时清掉领域条目，避免 DOMAINS 长期保留离线玩家。 */
+    @SubscribeEvent
+    public static void onLoggedOut(net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) {
+        DOMAINS.remove(event.getEntity().getUUID());
     }
 
     /** 领域维持期的花雨演出。 */

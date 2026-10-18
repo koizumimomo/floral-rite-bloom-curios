@@ -115,6 +115,7 @@ public final class MercyEvents {
             if (safe != null) {
                 player.teleportTo(respawnLevel, safe.x, safe.y, safe.z,
                         Set.of(RelativeMovement.X_ROT), player.getRespawnAngle(), player.getXRot());
+                cn.blockforge.generated.floralritebloomcurios.util.FRBState.resendClientState(player);
                 return;
             }
             target = respawnLevel;
@@ -139,6 +140,7 @@ public final class MercyEvents {
         }
         player.teleportTo(target, fallback.x, fallback.y, fallback.z,
                 Set.of(RelativeMovement.X_ROT), yaw, player.getXRot());
+        cn.blockforge.generated.floralritebloomcurios.util.FRBState.resendClientState(player);
     }
 
     /** 以给定位置为中心，Y 方向 -3 ~ +3 搜索一个可站立、头部有空间的坐标；找不到返回 null。 */

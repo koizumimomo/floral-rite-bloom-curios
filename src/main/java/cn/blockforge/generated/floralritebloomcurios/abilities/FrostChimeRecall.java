@@ -135,6 +135,9 @@ public final class FrostChimeRecall {
         player.stopRiding();
         player.teleportTo(destination, snapshot.getDouble("X"), snapshot.getDouble("Y"),
                 snapshot.getDouble("Z"), snapshot.getFloat("Yaw"), snapshot.getFloat("Pitch"));
+        if (destination != origin) {
+            cn.blockforge.generated.floralritebloomcurios.util.FRBState.resendClientState(player);
+        }
         player.setDeltaMovement(Vec3.ZERO);
         player.fallDistance = 0.0F;
         player.setHealth(Math.min(snapshot.getFloat("Health"), player.getMaxHealth()));

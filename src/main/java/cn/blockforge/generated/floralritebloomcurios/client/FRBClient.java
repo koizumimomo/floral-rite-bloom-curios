@@ -112,6 +112,9 @@ public final class FRBClient {
                 AbilityHudOverlay.markUse(kinds[p.kindOrdinal()]);
             }
         };
+        // 服务端权威的终极饰品佩戴状态，兜底 Curios 客户端同步延迟
+        FRBNetwork.ON_ULTIMATE_STATE = p -> cn.blockforge.generated.floralritebloomcurios.util.FRBState
+                .setClientUltimateWorn(p.worn());
     }
 
     /** FinaleTextPacket 客户端接收：刷新屏幕咏唱文本 + 同步 boss 位置到 shader uniform。 */
@@ -464,10 +467,9 @@ public final class FRBClient {
     @SubscribeEvent
     public static void onRightClickEmpty(net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickEmpty event) {
         Player player = event.getEntity();
-        if (!player.isShiftKeyDown()
-                || !cn.blockforge.generated.floralritebloomcurios.util.FRBState.hasUltimate(player)) {
-            return;
-        }
+        if (!player.isShiftKeyDown()) return;
+        // 不在客户端做佩戴判定：Curios 的客户端同步在切维度后可能滞后，
+        // 客户端一旦误判就会把包拦下来。服务端收到包后会再校验一次。
         FRBNetwork.CHANNEL.sendToServer(new EternalTogglePacket(
                 event.getHand() == net.minecraft.world.InteractionHand.OFF_HAND));
     }

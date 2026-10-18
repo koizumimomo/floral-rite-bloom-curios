@@ -65,6 +65,8 @@ public final class EternalGarden {
         BlockPos landing = surface(garden, 0, 0);
         player.teleportTo(garden, landing.getX() + 0.5D, landing.getY(), landing.getZ() + 0.5D,
                 player.getYRot(), player.getXRot());
+        // 命令式跨维度传送不会重发能力/药效，手动补发（否则客户端会丢掉夜视、水下呼吸、飞行）
+        cn.blockforge.generated.floralritebloomcurios.util.FRBState.resendClientState(player);
         int gateHalfX = ensureGate(garden, landing);
         ensureFlower(garden, landing, gateHalfX);
         garden.playSound(null, landing,
@@ -207,6 +209,7 @@ public final class EternalGarden {
         }
         root.remove(TAG_RETURN);
         player.teleportTo(dest, x, y, z, yaw, pitch);
+        cn.blockforge.generated.floralritebloomcurios.util.FRBState.resendClientState(player);
         player.fallDistance = 0.0F;
     }
 

@@ -275,8 +275,12 @@ public class FriliasEntity extends Monster implements software.bernie.geckolib.a
     private int skillCastTicks = 0;
     /** r90：技能读条总时长。 */
     private int skillCastMax = 0;
-    /** r90：技能释放前升空高度（格）。 */
-    private static final double SKILL_CAST_HOVER = 3.0D;
+    /** 常驻悬浮高度：离地 4 格。 */
+    private static final double HOVER_HEIGHT = 4.0D;
+    /** 技能读条期间在常驻悬浮高度上额外抬升的高度（格）。 */
+    private static final double SKILL_CAST_RISE = 3.0D;
+    /** 当前读条锁定的悬停目标高度。beginSkillCast 计算一次，tickSkillCast 只读不重算，避免逐 tick 抬升。 */
+    private double skillCastTargetY;
     /** r90：技能读条时长（与法阵动画 15 tick 一致）。 */
     public static final int SKILL_CAST_TICKS = 15;
     /** r90：云雨阶段传送后无敌时长：60 tick（3 秒）。 */
@@ -509,7 +513,7 @@ public class FriliasEntity extends Monster implements software.bernie.geckolib.a
     /**
      * r90：技能释放前统一处理——升空3格 + 无敌 + 设读条计时器。
      * 仅霜凝、积雨云、风眼三个技能接入；法阵动画由各调用点自行 frb$triggerCastAnim()。
-     * 天空阶段（phase 4）不升空（已悬浮 3 格）；虚空阶段（phase 5）不调用本方法。
+     * 天空阶段（phase 4）不升空（已悬浮 4 格）；虚空阶段（phase 5）不调用本方法。
      *
      * @param durationTicks 无敌+升空持续 tick（霜凝 30 / 积雨云 25 / 风眼 65）
      */
@@ -519,18 +523,21 @@ public class FriliasEntity extends Monster implements software.bernie.geckolib.a
         this.skillCastMax = durationTicks;
         this.entityData.set(DATA_SKILL_CAST, durationTicks);
         this.entityData.set(DATA_SKILL_CAST_MAX, durationTicks);
-        // r96：天空阶段 boss 已悬浮 3 格高，风眼/冲击波预警期不再全程无敌——
+        // r96：天空阶段 boss 已悬浮 4 格高，风眼/冲击波预警期不再全程无敌——
         //      否则每 80t 冲击波 + 75t 风眼无敌导致覆盖率 ~94%，玩家几乎无法输出。
         if (this.phase != 4) {
             this.setInvulnerable(true);
         }
-        // 天空阶段已悬浮 3 格，不再升空；其它阶段升空并关重力悬停
+        // 天空阶段已悬浮，不再升空；其它阶段升空并关重力悬停
         if (this.phase != 4) {
             this.setNoGravity(true);
             int gy = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                     Mth.floor(this.getX()), Mth.floor(this.getZ()));
-            double targetY = Math.max(this.getY(), gy) + SKILL_CAST_HOVER;
-            this.setDeltaMovement(0, (targetY - this.getY()) * 0.2D, 0);
+            // 固定目标 = 地面 + 常驻 4 格 + 读条抬升 3 格。不能用 max(当前Y, 地面)：
+            // 那样每次读条都以当前高度为基准，连续技能会把 boss 越抬越高。
+            this.skillCastTargetY = gy + HOVER_HEIGHT + SKILL_CAST_RISE;
+            this.setDeltaMovement(0,
+                    Mth.clamp((this.skillCastTargetY - this.getY()) * 0.2D, -0.3D, 0.3D), 0);
             this.hasImpulse = true;
         }
     }
@@ -542,16 +549,14 @@ public class FriliasEntity extends Monster implements software.bernie.geckolib.a
         this.entityData.set(DATA_SKILL_CAST, this.skillCastTicks);
         // 天空阶段不升空，保持悬浮
         if (this.phase != 4) {
-            int gy = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-                    Mth.floor(this.getX()), Mth.floor(this.getZ()));
-            double targetY = Math.max(this.getY(), gy) + SKILL_CAST_HOVER;
-            if (this.getY() < targetY - 0.5D) {
-                this.setDeltaMovement(0, 0.3D, 0);
-                this.hasImpulse = true;
-            } else if (this.skillCastTicks > 0) {
-                // 到达高度后悬浮
-                this.setDeltaMovement(Vec3.ZERO);
+            // 目标高度在 beginSkillCast 里算好并锁定，这里只朝它移动。
+            // 旧实现每 tick 重新算 max(当前Y, 地面) + 3，条件恒成立，读条期间会一直上升。
+            double dy = Mth.clamp((this.skillCastTargetY - this.getY()) * 0.3D, -0.3D, 0.3D);
+            if (Math.abs(this.skillCastTargetY - this.getY()) < 0.05D) {
+                dy = 0.0D; // 到达高度后悬浮
             }
+            this.setDeltaMovement(0, dy, 0);
+            this.hasImpulse = true;
         }
         // 归零时恢复：解除无敌；非天空/虚空阶段恢复重力落地
         if (this.skillCastTicks <= 0) {
@@ -1182,7 +1187,7 @@ public class FriliasEntity extends Monster implements software.bernie.geckolib.a
         int x = Mth.floor(this.getX());
         int z = Mth.floor(this.getZ());
         int groundY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
-        double hoverY = groundY + 3.0D; // r98：所有阶段统一离地 3 格
+        double hoverY = groundY + HOVER_HEIGHT; // 所有阶段统一离地 4 格
         double dy = Mth.clamp((hoverY - this.getY()) * 0.22D, -0.3D, 0.3D);
 
         LivingEntity target = this.getTarget();
@@ -1251,9 +1256,9 @@ public class FriliasEntity extends Monster implements software.bernie.geckolib.a
         if (oldPhase == 1) { // 焚尽结束 → 清除周围 32 格生之焰
             sweepLifeFire(level);
         }
-        if (oldPhase == 4) { // 天空 → 落地
+        if (oldPhase == 4) { // 天空 → 回到常驻悬浮高度
             this.setNoGravity(false);
-            landAtGround(level);
+            resetHoverHeight(level);
         }
         if (oldPhase == 3) { // r64：云雨 → 积雨云全清，避免积雨云跨阶段残留
             for (RainCloudEntity cloud : level.getEntitiesOfClass(RainCloudEntity.class,
@@ -1309,7 +1314,7 @@ public class FriliasEntity extends Monster implements software.bernie.geckolib.a
                 this.waterRippleDiagonal = level.getRandom().nextBoolean();
                 spawnWaterRipples(level);
             }
-            case 5 -> { // 虚空：离地 2.5 格悬浮、静止、不攻击
+            case 5 -> { // 虚空：离地 4 格悬浮、静止、不攻击
                 this.setNoGravity(true);
                 this.setTarget(null);
                 this.getNavigation().stop();
@@ -1322,7 +1327,7 @@ public class FriliasEntity extends Monster implements software.bernie.geckolib.a
                 }
             }
             case 6 -> { // 枯萎：只剩 10 点血量 + 三朵环绕的死亡之花护命
-                this.setNoGravity(true); // r98：统一离地 3 格
+                this.setNoGravity(true); // 统一离地 4 格
                 this.setTarget(null);
                 var maxHealth = this.getAttribute(Attributes.MAX_HEALTH);
                 if (maxHealth != null) {
@@ -1703,7 +1708,7 @@ public class FriliasEntity extends Monster implements software.bernie.geckolib.a
         level.playSound(null, this, SoundEvents.SHULKER_TELEPORT, SoundSource.HOSTILE, 2.0F, 0.9F);
     }
 
-    /** 天空：r90 固定在玩家上方 3 格悬浮，面朝玩家，释放技能时不再升空（beginSkillCast 跳过 phase 4）。 */
+    /** 天空：固定在地面上方 4 格悬浮，面朝玩家，释放技能时不再升空（beginSkillCast 跳过 phase 4）。 */
     private void skyPhase(ServerLevel level) {
         this.setNoGravity(true);
         this.getNavigation().stop();
@@ -1725,7 +1730,7 @@ public class FriliasEntity extends Monster implements software.bernie.geckolib.a
         double targetZ = this.skyAnchorZ;
         int gy = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 Mth.floor(targetX), Mth.floor(targetZ));
-        double targetY = gy + 3.0D;
+        double targetY = gy + HOVER_HEIGHT;
         double dx = Mth.clamp((targetX - this.getX()) * 0.15D, -0.3D, 0.3D);
         double dy = Mth.clamp((targetY - this.getY()) * 0.15D, -0.3D, 0.3D);
         double dz = Mth.clamp((targetZ - this.getZ()) * 0.15D, -0.3D, 0.3D);
@@ -1816,7 +1821,7 @@ public class FriliasEntity extends Monster implements software.bernie.geckolib.a
     private void castWindEye(ServerLevel level, boolean triggerAnim) {
         if (this.windEyeLockTicks > 0) return; // 已有月环在预警/结算中
         this.windEyeLockTicks = 75; // 60 预警 + 15 缓冲
-        // r90：风眼预警全程无敌（天空阶段已悬浮 3 格，beginSkillCast 不再升空）
+        // r90：风眼预警全程无敌（天空阶段已悬浮 4 格，beginSkillCast 不再升空）
         this.beginSkillCast(level, 75);
         Runnable warning = () -> {
             double cx = this.getX();
@@ -2373,19 +2378,19 @@ public class FriliasEntity extends Monster implements software.bernie.geckolib.a
                 SoundSource.HOSTILE, 1.5F, 0.8F);
     }
 
-    /** 将天空阶段结束时的 Boss 放回当前坐标下方最近的地面。 */
-    private void landAtGround(ServerLevel level) {
+    /** 天空阶段结束时把 Boss 归位到当前坐标下方的常驻悬浮高度（离地 4 格）。 */
+    private void resetHoverHeight(ServerLevel level) {
         int x = Mth.floor(this.getX());
         int z = Mth.floor(this.getZ());
         int groundY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
         if (groundY > level.getMinBuildHeight()) {
-            this.setPos(this.getX(), groundY, this.getZ());
+            this.setPos(this.getX(), groundY + HOVER_HEIGHT, this.getZ());
             this.setDeltaMovement(Vec3.ZERO);
             this.hasImpulse = true;
         }
     }
 
-    /** 虚空：离地 2.5 格悬浮不动不攻击；裂隙生成由 Mechanics.VoidRiftReducedMechanic 接管。 */
+    /** 虚空：离地 4 格悬浮不动不攻击；裂隙生成由 Mechanics.VoidRiftReducedMechanic 接管。 */
     private void voidPhase(ServerLevel level) {
         this.setNoGravity(true);
         this.getNavigation().stop();
@@ -2393,16 +2398,12 @@ public class FriliasEntity extends Monster implements software.bernie.geckolib.a
         if (this.getTarget() != null) {
             this.setTarget(null);
         }
-        // r98：离地 3 格悬浮（与天空阶段统一）
+        // 离地 4 格悬浮（与天空阶段统一）
         int gy = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 Mth.floor(this.getX()), Mth.floor(this.getZ()));
-        double targetY = gy + 3.0D;
-        if (this.getY() < targetY) {
-            this.setDeltaMovement(0, 0.2D, 0);
-        } else {
-            this.setPos(this.getX(), targetY, this.getZ());
-            this.setDeltaMovement(Vec3.ZERO);
-        }
+        double targetY = gy + HOVER_HEIGHT;
+        double dy = Mth.clamp((targetY - this.getY()) * 0.2D, -0.3D, 0.3D);
+        this.setDeltaMovement(0.0D, dy, 0.0D);
         this.hasImpulse = true;
         // 保留天空→虚空过渡时的镜头演出
         if (this.timer == 1) {
@@ -2448,10 +2449,10 @@ public class FriliasEntity extends Monster implements software.bernie.geckolib.a
             this.setTarget(null);
         }
         this.setNoGravity(true);
-        // r98：所有阶段统一离地 3 格
+        // 所有阶段统一离地 4 格
         int gy = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 Mth.floor(this.getX()), Mth.floor(this.getZ()));
-        double targetY = gy + 3.0D;
+        double targetY = gy + HOVER_HEIGHT;
         double dy = Mth.clamp((targetY - this.getY()) * 0.2D, -0.3D, 0.3D);
         this.setDeltaMovement(0.0D, dy, 0.0D);
         this.hasImpulse = true;
@@ -2881,10 +2882,10 @@ public class FriliasEntity extends Monster implements software.bernie.geckolib.a
         }
         this.getNavigation().stop();
         this.setTarget(frbNearestFighter(level, 32.0D)); // r93：只锁生存/冒险玩家
-        // r98：所有阶段统一离地 3 格悬浮
+        // 所有阶段统一离地 4 格悬浮
         int gy = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 Mth.floor(this.getX()), Mth.floor(this.getZ()));
-        double targetY = gy + 3.0D;
+        double targetY = gy + HOVER_HEIGHT;
         double dy = Mth.clamp((targetY - this.getY()) * 0.2D, -0.3D, 0.3D);
         this.setDeltaMovement(0.0D, dy, 0.0D);
         this.hasImpulse = true;

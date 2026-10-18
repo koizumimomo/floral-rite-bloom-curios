@@ -3,15 +3,12 @@ package cn.blockforge.generated.floralritebloomcurios.util;
 import cn.blockforge.generated.floralritebloomcurios.charm.CharmType;
 import cn.blockforge.generated.floralritebloomcurios.registry.FRBItems;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import top.theillusivec4.curios.api.CuriosApi;
-
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 佩戴检测与玩家持久状态（七花收集进度、快照、各类冷却）。
@@ -24,41 +21,17 @@ public final class FRBState {
     // ---- 佩戴检测 ----
 
     /**
-     * 佩戴缓存。判定方式对齐诡厄巫法启示录的 {@code CuriosFinder.findCurio}——
-     * 那边每次使用能力都直接查 Curios，不缓存；这里保留缓存只是为了减少同一 tick 内的重复查询
-     * （{@link #active} 每 tick 会被调用十几次），但必须满足两个条件：
-     * <ul>
-     *   <li>缓存键是「客户端/服务端 + 玩家 UUID + 具体饰品」：否则戴着森语藤时查焚生藤也会命中；
-     *       单人游戏里客户端和服务端共用一个 JVM，不加 side 的话客户端同步窗口内的 false
-     *       会污染服务端判定；</li>
-     *   <li>缓存最多存活 {@value #WEAR_CACHE_TTL} tick：登录 / 切维度时 Curios 还没同步完，
-     *       这一瞬间查到的 false 不能被长期记住（旧实现会几乎永久记住，导致切维度后
-     *       "不被判定成携带状态"）。</li>
-     * </ul>
+     * 该物品是否佩戴在实体的花仪 / 永恒槽位中（含其它 curios 槽，统一判定）。
+     * <p>
+     * 每次直接查询 Curios，与诡厄巫法启示录的
+     * {@code CuriosFinder.findCurio} / {@code ATAHelper.hasHalo} 一致，不做任何缓存。
+     * 之前为减少重复查询加过缓存，但 Curios 在登录 / 切换维度后的同步时序并不可靠：
+     * 只要在同步窗口内写进过一次 false，终极饰品就会持续判定为"未携带"，直到重新装备。
+     * 参考实现的晋升之环每次使用能力都现查，这里也改成现查。
      */
-    private static final Map<WearKey, WearEntry> WEAR_CACHE = new ConcurrentHashMap<>();
-    /** 佩戴缓存存活时间：20 tick = 1 秒。 */
-    private static final int WEAR_CACHE_TTL = 20;
-
-    private record WearKey(boolean clientSide, UUID player, Item item) {}
-    private record WearEntry(boolean worn, int tick) {}
-
-    /** 该物品是否佩戴在实体的花仪 / 永恒槽位中（含其它 curios 槽，统一判定）。 */
     public static boolean wearing(LivingEntity entity, Item item) {
         if (entity == null || item == null) return false;
-        boolean clientSide = entity.level() != null && entity.level().isClientSide;
-        WearKey key = new WearKey(clientSide, entity.getUUID(), item);
-        WearEntry cached = WEAR_CACHE.get(key);
-        int now = entity.tickCount;
-        if (cached != null) {
-            int age = now - cached.tick();
-            // 客户端换维度后 tickCount 会从头计数，age 可能为负——同样按过期处理
-            if (age >= 0 && age < WEAR_CACHE_TTL) return cached.worn();
-        }
-        boolean result = findEquipped(entity, item).isPresent();
-        if (WEAR_CACHE.size() > 16384) WEAR_CACHE.clear();
-        WEAR_CACHE.put(key, new WearEntry(result, now));
-        return result;
+        return findEquipped(entity, item).isPresent();
     }
 
     /** 扫描全部 curios 槽寻找匹配物品（findFirstCurio 比 isEquipped 更可靠）。 */
@@ -69,18 +42,19 @@ public final class FRBState {
     }
 
     /**
-     * 使缓存失效（装备/卸下/登录/重生时调用）。
-     * 切维度<b>不需要</b>调用：饰品仍然戴着，缓存本身有效；即使这一瞬间 Curios 未同步，
-     * {@link #WEAR_CACHE_TTL} 后也会自动重查，不会像旧实现那样把 false 长期记住。
+     * 命令式跨维度传送（{@code teleportTo(ServerLevel, ...)}）和传送门走的不是同一条路径：
+     * 传送门路径会在新维度里重发能力与全部药效，命令路径不会。客户端重建 LocalPlayer 后
+     * 能力和药效列表是空的，而服务端又因为"自己这边还有"不会重新下发，表现就是
+     * 进了永恒花园后夜视、水下呼吸、飞行全部消失（但服务端数据和饰品都还在）。
+     * 这里手动补发一次。药效必须在 Respawn 包之后发送，所以调用点要放在 teleportTo 之后。
      */
-    public static void invalidateWearCache(LivingEntity entity) {
-        if (entity == null) return;
-        UUID id = entity.getUUID();
-        WEAR_CACHE.keySet().removeIf(key -> key.player().equals(id));
-    }
-
-    public static void clearWearCache() {
-        if (!WEAR_CACHE.isEmpty()) WEAR_CACHE.clear();
+    public static void resendClientState(ServerPlayer player) {
+        player.connection.send(new net.minecraft.network.protocol.game.ClientboundPlayerAbilitiesPacket(
+                player.getAbilities()));
+        for (net.minecraft.world.effect.MobEffectInstance effect : player.getActiveEffects()) {
+            player.connection.send(new net.minecraft.network.protocol.game.ClientboundUpdateMobEffectPacket(
+                    player.getId(), effect));
+        }
     }
 
     /** 槽位内佩戴该饰品时为 true（只统计指定花仪槽，slotId 为 curios 槽名）。 */
@@ -96,8 +70,23 @@ public final class FRBState {
         return true;
     }
 
+    /**
+     * 客户端由服务端下发的权威状态兜底：命令式跨维度传送后 Curios 的客户端同步可能滞后，
+     * 光环渲染 / 二段跳等客户端判定会误以为没戴。服务端每 20 tick 比对并下发
+     * {@link cn.blockforge.generated.floralritebloomcurios.network.UltimateStatePacket}。
+     */
+    private static volatile boolean clientUltimateWorn;
+
+    public static void setClientUltimateWorn(boolean worn) {
+        clientUltimateWorn = worn;
+    }
+
     public static boolean hasUltimate(Player player) {
-        return wearing(player, FRBItems.ETERNAL_SPIRIT.get());
+        boolean worn = wearing(player, FRBItems.ETERNAL_SPIRIT.get());
+        if (!worn && player.level() != null && player.level().isClientSide) {
+            return clientUltimateWorn;
+        }
+        return worn;
     }
 
     /**
