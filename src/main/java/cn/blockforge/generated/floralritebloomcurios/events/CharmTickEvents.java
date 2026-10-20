@@ -28,6 +28,7 @@ import net.minecraftforge.fml.common.Mod;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -43,6 +44,12 @@ public final class CharmTickEvents {
 
     /** 每个玩家最后一次下发给客户端的终极饰品佩戴状态。 */
     private static final Map<UUID, Boolean> LAST_SENT_ULTIMATE = new ConcurrentHashMap<>();
+    /**
+     * 由本模组授予过飞行权限的玩家。
+     * 收回飞行时只收回我们发出去的那一份：其他模组（饰品、翅膀等）给的 mayfly
+     * 不能因为玩家没戴万花万草之灵就被我们每 40 tick 关掉。
+     */
+    private static final Set<UUID> FLIGHT_GRANTED = ConcurrentHashMap.newKeySet();
 
     @SubscribeEvent
     public static void onLivingTick(LivingEvent.LivingTickEvent event) {
@@ -178,20 +185,28 @@ public final class CharmTickEvents {
         }
 
         // 万花万草之灵：永久夜视、水下呼吸、飞行
-        if (tc % 40 == 0 && FRBState.hasUltimate(player)) {
-            if (!player.isCreative() && !player.isSpectator() && !player.getAbilities().flying
-                    && !player.getAbilities().mayfly) {
-                // 仅在权限真的未开放时下发能力更新包，避免每 2 秒一次的无谓同步
-                player.getAbilities().mayfly = true;
+        if (tc % 40 == 0) {
+            boolean wearing = FRBState.hasUltimate(player);
+            boolean special = player.isCreative() || player.isSpectator();
+            if (wearing) {
+                if (!special && !player.getAbilities().flying && !player.getAbilities().mayfly) {
+                    // 仅在权限真的未开放时下发能力更新包，避免每 2 秒一次的无谓同步
+                    player.getAbilities().mayfly = true;
+                    FLIGHT_GRANTED.add(player.getUUID());
+                    player.onUpdateAbilities();
+                }
+            } else if (special) {
+                // 创造/旁观由游戏模式管理飞行；清掉我们的标记，避免切回生存后误收别人的飞行
+                FLIGHT_GRANTED.remove(player.getUUID());
+            } else if (!player.getAbilities().mayfly) {
+                // 我们授予的飞行已经不在了（被其他模组/游戏模式收回），清掉残留标记
+                FLIGHT_GRANTED.remove(player.getUUID());
+            } else if (FLIGHT_GRANTED.remove(player.getUUID())) {
+                // 只收回本模组授予的飞行；其他模组提供的 mayfly 不动
+                player.getAbilities().mayfly = false;
+                player.getAbilities().flying = false;
                 player.onUpdateAbilities();
             }
-        } else if (tc % 40 == 0 && !FRBState.hasUltimate(player)
-                && !player.isCreative() && !player.isSpectator()
-                && player.getAbilities().mayfly) {
-            // 卸下终极饰品后收回飞行权限
-            player.getAbilities().mayfly = false;
-            player.getAbilities().flying = false;
-            player.onUpdateAbilities();
         }
 
         // 终极饰品佩戴状态同步：服务端权威值，供客户端在 Curios 同步滞后时兜底
@@ -218,7 +233,15 @@ public final class CharmTickEvents {
 
     @SubscribeEvent
     public static void onLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
-        LAST_SENT_ULTIMATE.remove(event.getEntity().getUUID());
+        UUID id = event.getEntity().getUUID();
+        LAST_SENT_ULTIMATE.remove(id);
+        FLIGHT_GRANTED.remove(id);
+    }
+
+    @SubscribeEvent
+    public static void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
+        // 重生后能力由游戏模式重置，旧标记不能留着误伤其他模组授予的飞行
+        FLIGHT_GRANTED.remove(event.getEntity().getUUID());
     }
 
     /**
