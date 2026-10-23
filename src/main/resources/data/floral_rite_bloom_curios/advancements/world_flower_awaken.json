@@ -2,7 +2,7 @@
   "parent": "floral_rite_bloom_curios:charm_collector",
   "display": {
     "icon": {
-      "item": "floral_rite_bloom_curios:world_flower"
+      "item": "floral_rite_bloom_curios:seed_of_realm"
     },
     "title": {
       "translate": "advancements.floral_rite_bloom_curios.world_flower_awaken.title"

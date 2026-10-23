@@ -1,7 +1,7 @@
 {
   "parent": "minecraft:builtin/entity",
   "textures": {
-    "particle": "floral_rite_bloom_curios:entity/feng_rao"
+    "particle": "floral_rite_bloom_curios:block/forest_whisper_flower"
   },
   "display": {
     "thirdperson_righthand": {

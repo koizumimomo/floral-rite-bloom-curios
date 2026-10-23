@@ -90,10 +90,47 @@ public class RitualCategory implements IRecipeCategory<RitualJeiRecipe> {
         }
         if (!recipe.nearbyFluids.isEmpty()) {
             var slot = builder.addSlot(RecipeIngredientRole.CATALYST, 42, ROW_NEARBY);
-            recipe.nearbyFluids.forEach(fluid -> slot.addFluidStack(fluid, 1000L));
+            for (net.minecraft.world.level.material.Fluid fluid : recipe.nearbyFluids) {
+                addFluidCompat(slot, fluid, 1000);
+            }
         }
 
         builder.addSlot(RecipeIngredientRole.OUTPUT, 144, ROW_NEARBY).addItemStack(recipe.output);
+    }
+
+    /**
+     * r113：跨 JEI 版本地添加流体槽位。
+     *
+     * <p>JEI 1.20.1 各版本的 {@code IRecipeSlotBuilder.addFluidStack} 重载签名不一致：
+     * 早期（如 15.20.0）只有 {@code (Fluid, int)} 形态，后期（15.4x+）新增了
+     * {@code (Fluid, long)}。编译期用的 API 桩无法同时覆盖所有版本，
+     * 写死任何一种在别的版本上都会抛 {@code NoSuchMethodError}，
+     * 进而让 JEI 里<b>每一条</b>花仪仪式配方注册失败。</p>
+     *
+     * <p>这里在运行期用反射挑当前 JEI 实际存在的重载来调用（单参 → int → long 依次尝试），
+     * 彻底摆脱"桩与真实 API 版本耦合"的问题。全部失败时静默跳过，不影响其余槽位。</p>
+     */
+    private static void addFluidCompat(mezz.jei.api.gui.builder.IRecipeSlotBuilder slot,
+                                       net.minecraft.world.level.material.Fluid fluid, int amount) {
+        Class<?> fluidCls = net.minecraft.world.level.material.Fluid.class;
+        for (java.lang.reflect.Method m : mezz.jei.api.gui.builder.IRecipeSlotBuilder.class.getMethods()) {
+            if (!"addFluidStack".equals(m.getName())) continue;
+            Class<?>[] params = m.getParameterTypes();
+            try {
+                if (params.length == 1 && params[0] == fluidCls) {
+                    m.invoke(slot, fluid);
+                    return;
+                }
+                if (params.length == 2 && params[0] == fluidCls
+                        && (params[1] == int.class || params[1] == long.class)) {
+                    Object amt = (params[1] == int.class) ? (Object) amount : (Object) (long) amount;
+                    m.invoke(slot, fluid, amt);
+                    return;
+                }
+            } catch (Throwable ignored) {
+                // 该重载在此 JEI 版本下不可用 → 试下一个
+            }
+        }
     }
 
     @Override
