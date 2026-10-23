@@ -4,11 +4,14 @@ import cn.blockforge.generated.floralritebloomcurios.FloralRiteBloom;
 import cn.blockforge.generated.floralritebloomcurios.entity.FriliasEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -133,6 +136,11 @@ public class FriliasRenderer extends GeoEntityRenderer<FriliasEntity> {
     private static final float CROSS_X = -1.30F;
     private static final float CROSS_Y_L = -0.55F;
     private static final float CROSS_Y_R = 0.55F;
+    /**
+     * r114：boss 低头看玩家的最大俯仰角（度）。
+     * <p>天空阶段 boss 悬在玩家头顶 4 格，完全低头反而像"脖子折断"，故留一个上限。</p>
+     */
+    private static final float MAX_HEAD_PITCH = 38.0F;
 
     public FriliasRenderer(EntityRendererProvider.Context context) {
         super(context, new FriliasGeoModel());
@@ -162,13 +170,39 @@ public class FriliasRenderer extends GeoEntityRenderer<FriliasEntity> {
             applyRaiseArms(model);
         } else if (charging) {
             applyCrossArms(model);
-        } else if (entity.getFrbPhase() == 4) {
-            // r90：天空阶段 boss 高悬玩家上方，需要低头看玩家
-            GeoBone head = model.getBone("head").orElse(null);
-            if (head != null) {
-                head.setRotX(-entity.getXRot() * Mth.DEG_TO_RAD);
-            }
+        } else {
+            applyHeadLookDown(entity, model);
         }
+    }
+
+    /**
+     * r114：让 boss 低头看玩家（修 #11「天空阶段 boss 不看我」）。
+     *
+     * <p><b>原实现（r90）的问题</b>：只在天空阶段（phase 4）生效，且角度符号是反的——
+     * {@code head.setRotX(-entity.getXRot() * Mth.DEG_TO_RAD)}。
+     * Minecraft 约定 pitch 为正 = <b>低头</b>；GeckoLib 骨骼 rotX 为正同样是"往下压"
+     * （{@code RenderUtils#rotateMatrixAroundBone} 走 {@code Axis.XP.rotation(弧度)}，
+     * 与 MC {@code ModelPart} 的 xRot 同向同单位）。取负号等于 boss 在俯视玩家时
+     * <b>反而把头仰起来</b>，玩家看到的就是"boss 不看我"。</p>
+     *
+     * <p><b>本次改动</b>：符号改正，并改成在客户端按「boss 眼睛 → 本地玩家眼睛」实时重算俯仰角。
+     * 不依赖实体的 pitch 网络同步——悬浮 boss 位移极小，旋转包稀疏，客户端的
+     * {@code getXRot()} 常常是上一甚至几 tick 前的旧值。</p>
+     */
+    private static void applyHeadLookDown(FriliasEntity entity, BakedGeoModel model) {
+        GeoBone head = model.getBone("head").orElse(null);
+        if (head == null) return;
+        Minecraft mc = Minecraft.getInstance();
+        Player viewer = mc.player;
+        if (viewer == null) return;
+        Vec3 to = viewer.getEyePosition().subtract(entity.getEyePosition());
+        double horizontal = Math.sqrt(to.x * to.x + to.z * to.z);
+        if (horizontal < 1.0E-4D) return;
+        // 与服务端 skyPhase 同一口径：正 = 低头
+        float pitch = (float) -Math.toDegrees(Math.atan2(to.y, horizontal));
+        pitch = Mth.clamp(pitch, -MAX_HEAD_PITCH, MAX_HEAD_PITCH);
+        head.setRotX(pitch * Mth.DEG_TO_RAD);
+        head.setRotY(0.0F);
     }
 
     private static void applyRaiseArms(BakedGeoModel model) {

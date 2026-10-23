@@ -6,6 +6,7 @@ import cn.blockforge.generated.floralritebloomcurios.registry.FRBEffects;
 import cn.blockforge.generated.floralritebloomcurios.registry.FRBItems;
 import cn.blockforge.generated.floralritebloomcurios.registry.FRBParticles;
 import cn.blockforge.generated.floralritebloomcurios.util.FRBState;
+import cn.blockforge.generated.floralritebloomcurios.util.TotemTools;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
@@ -153,7 +154,7 @@ public final class CharmEvents {
             // r112：不死图腾优先——手持图腾时一律放行，交还原版 Player#die → checkTotemDeathProtection
             //      消费图腾。之前这里抢先 cancel 伤害并 setHealth，玩家不会进入死亡流程，
             //      图腾永远不触发（玩家反馈"图腾失效"）。
-            if (cn.blockforge.generated.floralritebloomcurios.util.TotemTools.hasTotem(player)) {
+            if (TotemTools.hasTotem(player)) {
                 return;
             }
             float snapshot = FRBState.getFloat(player, "Snapshot", 0.0F);
@@ -236,8 +237,7 @@ public final class CharmEvents {
      * 详见 {@link cn.blockforge.generated.floralritebloomcurios.util.TotemTools#wouldActuallyKill}。
      */
     private static boolean wouldActuallyKill(ServerPlayer player, DamageSource src, float rawAmount) {
-        return cn.blockforge.generated.floralritebloomcurios.util.TotemTools
-                .wouldActuallyKill(player, src, rawAmount);
+        return TotemTools.wouldActuallyKill(player, src, rawAmount);
     }
 
     /** 寒风铃复活时冰封四周：8 格内敌对生物冻结 + 强减速。 */

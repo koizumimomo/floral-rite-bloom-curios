@@ -113,23 +113,38 @@ public class RitualCategory implements IRecipeCategory<RitualJeiRecipe> {
     private static void addFluidCompat(mezz.jei.api.gui.builder.IRecipeSlotBuilder slot,
                                        net.minecraft.world.level.material.Fluid fluid, int amount) {
         Class<?> fluidCls = net.minecraft.world.level.material.Fluid.class;
+        // r114：按优先级收集当前 JEI 实际存在的重载 —— 单参 → (Fluid,int) → (Fluid,long)。
+        // getMethods() 的返回顺序是未定义的，"碰到哪个算哪个"会让行为随 JEI 版本抖动，
+        // 因此显式分桶后再按固定顺序尝试。
+        java.lang.reflect.Method one = null;
+        java.lang.reflect.Method asInt = null;
+        java.lang.reflect.Method asLong = null;
         for (java.lang.reflect.Method m : mezz.jei.api.gui.builder.IRecipeSlotBuilder.class.getMethods()) {
             if (!"addFluidStack".equals(m.getName())) continue;
-            Class<?>[] params = m.getParameterTypes();
-            try {
-                if (params.length == 1 && params[0] == fluidCls) {
-                    m.invoke(slot, fluid);
-                    return;
-                }
-                if (params.length == 2 && params[0] == fluidCls
-                        && (params[1] == int.class || params[1] == long.class)) {
-                    Object amt = (params[1] == int.class) ? (Object) amount : (Object) (long) amount;
-                    m.invoke(slot, fluid, amt);
-                    return;
-                }
-            } catch (Throwable ignored) {
-                // 该重载在此 JEI 版本下不可用 → 试下一个
+            Class<?>[] p = m.getParameterTypes();
+            if (p.length == 1 && p[0] == fluidCls) {
+                one = m;
+            } else if (p.length == 2 && p[0] == fluidCls) {
+                if (p[1] == int.class) asInt = m;
+                else if (p[1] == long.class) asLong = m;
             }
+        }
+        // 单参重载在 JEI 里默认就是 1 桶（1000 mB），与我们要传的 amount 一致，优先用。
+        if (one != null && invokeQuietly(one, slot, fluid)) return;
+        if (asInt != null && invokeQuietly(asInt, slot, fluid, amount)) return;
+        if (asLong != null && invokeQuietly(asLong, slot, fluid, (long) amount)) return;
+        // 全部不可用 → 静默跳过，不影响其余槽位
+    }
+
+    /** 反射调用，失败返回 false（换下一个重载）。 */
+    private static boolean invokeQuietly(java.lang.reflect.Method m,
+                                         mezz.jei.api.gui.builder.IRecipeSlotBuilder slot,
+                                         Object... args) {
+        try {
+            m.invoke(slot, args);
+            return true;
+        } catch (Throwable ignored) {
+            return false;
         }
     }
 

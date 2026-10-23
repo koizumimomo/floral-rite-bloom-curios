@@ -2,6 +2,8 @@ package cn.blockforge.generated.floralritebloomcurios.events;
 
 import cn.blockforge.generated.floralritebloomcurios.FloralRiteBloom;
 import cn.blockforge.generated.floralritebloomcurios.entity.FriliasEntity;
+import cn.blockforge.generated.floralritebloomcurios.util.FRBState;
+import cn.blockforge.generated.floralritebloomcurios.util.TotemTools;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -13,7 +15,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.entity.RelativeMovement;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -58,11 +59,11 @@ public final class MercyEvents {
         // r112：不死图腾优先——双手任一持有图腾则放行，由原版消耗图腾保命。
         //      （原版图腾在 Player#die → checkTotemDeathProtection 里消费；我们抢先取消伤害
         //      就等于永远进不了死亡流程，图腾形同虚设。）
-        if (cn.blockforge.generated.floralritebloomcurios.util.TotemTools.hasTotem(player)) return;
+        if (TotemTools.hasTotem(player)) return;
         // r112：仁慈只针对"boss 本体造成的伤害"。
         //      之前会连带接管摔落 / 岩浆 / 虚空 / 其它模组的致命伤害，导致这些场景下
         //      原版不死图腾流程被绕过（玩家反馈"图腾失效"）。
-        if (!cn.blockforge.generated.floralritebloomcurios.util.TotemTools.isBossDamage(event.getSource())) {
+        if (!TotemTools.isBossDamage(event.getSource())) {
             return;
         }
         // 虚空、/kill 等绝对伤害不拦截
@@ -103,10 +104,6 @@ public final class MercyEvents {
         bosses.get(0).frbSayTo(player, "frb.boss.say.mercy");
     }
 
-    private static boolean hasTotem(ServerPlayer player) {
-        return cn.blockforge.generated.floralritebloomcurios.util.TotemTools.hasTotem(player);
-    }
-
     /** 送回玩家重生点（床/重生锚），失效则世界出生点；坐标不安全时上下搜索或回退出生点。 */
     private static void teleportToRespawn(ServerPlayer player) {
         MinecraftServer server = player.server;
@@ -122,7 +119,7 @@ public final class MercyEvents {
             if (safe != null) {
                 player.teleportTo(respawnLevel, safe.x, safe.y, safe.z,
                         Set.of(RelativeMovement.X_ROT), player.getRespawnAngle(), player.getXRot());
-                cn.blockforge.generated.floralritebloomcurios.util.FRBState.resendClientState(player);
+                FRBState.resendClientState(player);
                 return;
             }
             target = respawnLevel;
@@ -147,7 +144,7 @@ public final class MercyEvents {
         }
         player.teleportTo(target, fallback.x, fallback.y, fallback.z,
                 Set.of(RelativeMovement.X_ROT), yaw, player.getXRot());
-        cn.blockforge.generated.floralritebloomcurios.util.FRBState.resendClientState(player);
+        FRBState.resendClientState(player);
     }
 
     /** 以给定位置为中心，Y 方向 -3 ~ +3 搜索一个可站立、头部有空间的坐标；找不到返回 null。 */
