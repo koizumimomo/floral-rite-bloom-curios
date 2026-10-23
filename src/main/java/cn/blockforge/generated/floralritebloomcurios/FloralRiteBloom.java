@@ -13,6 +13,7 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.common.MinecraftForge;
 import cn.blockforge.generated.floralritebloomcurios.command.FRBCommand;
 
@@ -39,17 +40,17 @@ public final class FloralRiteBloom {
 //      现在 mods 列表 → 配置按钮 → 打开的是 frb_boss.toml，里面包含 Boss 数值 + HUD + 神环全部选项。
         // FRBClientConfig 类已被删除；调用点统一改 FRBConfig。
         // r85：游戏内配置界面（模组列表 → 配置按钮直接打开 FRBConfigScreen）。
-        net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT,
-                () -> () -> net.minecraftforge.fml.ModLoadingContext.get().registerExtensionPoint(
-                        net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory.class,
-                        () -> new net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory(
-                                (mc, parent) -> new cn.blockforge.generated.floralritebloomcurios.client.FRBConfigScreen(parent))));
+        // r111：必须经 DistExecutor + 客户端专属类间接引用——主类方法签名里一旦出现
+        //       Screen / Minecraft 等客户端类型，专用服务器构造 mod 反射解析签名时就会加载 Screen 并崩溃。
+        DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT,
+                () -> cn.blockforge.generated.floralritebloomcurios.client.FRBClientSetup::registerConfigScreen);
         // 永恒花园的超平坦变体生成器：DeferredRegister 由 FML 在注册窗口期写入
         cn.blockforge.generated.floralritebloomcurios.world.EternalGardenChunkGenerator.CHUNK_GENERATORS.register(bus);
         bus.addListener(this::commonSetup);
-        bus.addListener(this::clientSetup);
-        // 训练假人（dummmmmmy）颜色注入：构造期写入其 toml（早于 config 加载，本局生效）
-        cn.blockforge.generated.floralritebloomcurios.client.DummyDamageColorInjector.injectEarly();
+        // 训练假人（dummmmmmy）颜色注入：构造期写入其 toml（早于 config 加载，本局生效）。
+        // 同样经 DistExecutor 间接调用，避免客户端专属类被专用服务器加载。
+        DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT,
+                () -> cn.blockforge.generated.floralritebloomcurios.client.DummyDamageColorInjector::injectEarly);
         // 槽位归属走 Curios 内置 curios:tag 校验器（读物品标签 curios:flower_charm / curios:flower_eternal），
         // 不再自己注册谓词。
         bus.addListener(FRBEntities::registerAttributes);
@@ -58,10 +59,6 @@ public final class FloralRiteBloom {
 
     private void commonSetup(FMLCommonSetupEvent event) {
         event.enqueueWork(FRBNetwork::init);
-    }
-
-    private void clientSetup(net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent event) {
-        cn.blockforge.generated.floralritebloomcurios.client.DummyDamageColorInjector.injectAtClientSetup();
     }
 
     private void registerCommands(RegisterCommandsEvent event) {
