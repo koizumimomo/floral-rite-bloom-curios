@@ -55,8 +55,16 @@ public final class MercyEvents {
         if (mode != GameType.SURVIVAL && mode != GameType.ADVENTURE) return;
         // LivingDamageEvent 的 amount 已扣过护甲/抗性/吸收心，>= 当前血量即致命
         if (event.getAmount() < player.getHealth()) return;
-        // 不死图腾优先：双手任一持有图腾则放行，由原版消耗图腾保命
-        if (hasTotem(player)) return;
+        // r112：不死图腾优先——双手任一持有图腾则放行，由原版消耗图腾保命。
+        //      （原版图腾在 Player#die → checkTotemDeathProtection 里消费；我们抢先取消伤害
+        //      就等于永远进不了死亡流程，图腾形同虚设。）
+        if (cn.blockforge.generated.floralritebloomcurios.util.TotemTools.hasTotem(player)) return;
+        // r112：仁慈只针对"boss 本体造成的伤害"。
+        //      之前会连带接管摔落 / 岩浆 / 虚空 / 其它模组的致命伤害，导致这些场景下
+        //      原版不死图腾流程被绕过（玩家反馈"图腾失效"）。
+        if (!cn.blockforge.generated.floralritebloomcurios.util.TotemTools.isBossDamage(event.getSource())) {
+            return;
+        }
         // 虚空、/kill 等绝对伤害不拦截
         if (event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return;
         ServerLevel level = (ServerLevel) player.level();
@@ -96,8 +104,7 @@ public final class MercyEvents {
     }
 
     private static boolean hasTotem(ServerPlayer player) {
-        return player.getMainHandItem().is(Items.TOTEM_OF_UNDYING)
-                || player.getOffhandItem().is(Items.TOTEM_OF_UNDYING);
+        return cn.blockforge.generated.floralritebloomcurios.util.TotemTools.hasTotem(player);
     }
 
     /** 送回玩家重生点（床/重生锚），失效则世界出生点；坐标不安全时上下搜索或回退出生点。 */

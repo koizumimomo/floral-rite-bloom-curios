@@ -144,8 +144,18 @@ public final class CharmEvents {
             FRBState.setFloat(player, "IceStored", stored);
         }
 
-        // 致死伤害处理顺序：寒风铃快照复活 → 七花共鸣 → 终末花环
-        if (amount >= player.getHealth() && !player.getAbilities().invulnerable) {
+        // 致死伤害处理顺序：不死图腾 > 寒风铃快照 → 七花共鸣 → 终末花环
+        // r112：LivingAttackEvent 的 amount 是「未扣护甲/抗性/吸收心」的原始值，
+        //      直接拿它和当前血量比会把"实际打不死"的伤害误判成致死（例如玩家 5 HP、
+        //      原始伤害 6、护甲减掉 4 → 实际只掉 2，本来不会死）。这里按原版公式
+        //      估算「实际扣血量」后再判定是否真的会死。
+        if (wouldActuallyKill(player, src, amount) && !player.getAbilities().invulnerable) {
+            // r112：不死图腾优先——手持图腾时一律放行，交还原版 Player#die → checkTotemDeathProtection
+            //      消费图腾。之前这里抢先 cancel 伤害并 setHealth，玩家不会进入死亡流程，
+            //      图腾永远不触发（玩家反馈"图腾失效"）。
+            if (cn.blockforge.generated.floralritebloomcurios.util.TotemTools.hasTotem(player)) {
+                return;
+            }
             float snapshot = FRBState.getFloat(player, "Snapshot", 0.0F);
             if (FRBState.active(player, CharmType.FROST_CHIME) && snapshot > 0.5F
                     && FRBState.useCooldown(player, "ReviveCd", level.getGameTime(), 1200L)) {
@@ -219,6 +229,15 @@ public final class CharmEvents {
                 event.setAmount(event.getAmount() * cn.blockforge.generated.floralritebloomcurios.effect.SoggyEffect.DAMAGE_MULTIPLIER);
             }
         }
+    }
+
+    /**
+     * r112：按原版伤害公式估算「扣完护甲 / 抗性 / 吸收心后玩家是否真的会死」。
+     * 详见 {@link cn.blockforge.generated.floralritebloomcurios.util.TotemTools#wouldActuallyKill}。
+     */
+    private static boolean wouldActuallyKill(ServerPlayer player, DamageSource src, float rawAmount) {
+        return cn.blockforge.generated.floralritebloomcurios.util.TotemTools
+                .wouldActuallyKill(player, src, rawAmount);
     }
 
     /** 寒风铃复活时冰封四周：8 格内敌对生物冻结 + 强减速。 */
